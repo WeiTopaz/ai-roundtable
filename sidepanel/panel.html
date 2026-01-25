@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Panel</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+
+<body>
+  <div class="container">
+    <!-- Mode Switcher -->
+    <section class="mode-switcher">
+      <button class="mode-btn active" id="mode-normal">一般</button>
+      <button class="mode-btn" id="mode-discussion">討論</button>
+    </section>
+
+    <!-- Normal Mode Content -->
+    <div id="normal-mode">
+      <section class="targets">
+        <label class="target-label">
+          <input type="checkbox" id="target-claude">
+          <span class="target-name claude">Claude</span>
+          <span class="connection-indicator" id="indicator-claude"></span>
+          <span class="status" id="status-claude">-</span>
+        </label>
+        <label class="target-label">
+          <input type="checkbox" id="target-chatgpt" checked>
+          <span class="target-name chatgpt">ChatGPT</span>
+          <span class="connection-indicator" id="indicator-chatgpt"></span>
+          <span class="status" id="status-chatgpt">-</span>
+        </label>
+        <label class="target-label">
+          <input type="checkbox" id="target-gemini" checked>
+          <span class="target-name gemini">Gemini</span>
+          <span class="connection-indicator" id="indicator-gemini"></span>
+          <span class="status" id="status-gemini">-</span>
+        </label>
+      </section>
+
+      <section class="input-section">
+        <div class="action-buttons">
+          <select id="action-select" class="action-select">
+            <option value="">選擇動作...</option>
+            <optgroup label="🔄 互評">
+              <option value="mutual">讓勾選的 AI 互相評價</option>
+            </optgroup>
+            <optgroup label="📝 請...評價">
+              <option value="ask-claude">請 Claude 評價...</option>
+              <option value="ask-chatgpt">請 ChatGPT 評價...</option>
+              <option value="ask-gemini">請 Gemini 評價...</option>
+            </optgroup>
+            <optgroup label="⚙️ 進階">
+              <option value="advanced-cross">指定來源評價（多對一）</option>
+            </optgroup>
+          </select>
+          <div class="help-tooltip-container">
+            <span class="help-icon">?</span>
+            <div class="help-tooltip">
+              <p class="help-subtitle">🔄 互評</p>
+              <ul>
+                <li>讓所有勾選的 AI 互相評價對方的回覆</li>
+              </ul>
+              <p class="help-subtitle">📝 請...評價</p>
+              <ul>
+                <li>指定某個 AI 評價其他 AI 的回覆</li>
+                <li>選擇後會彈出來源與語氣選擇</li>
+              </ul>
+              <p class="help-subtitle">⚙️ 進階</p>
+              <ul>
+                <li>複雜組合：多個 AI 評價同一個</li>
+              </ul>
+            </div>
+          </div>
+          <label class="prompt-repetition-label" title="建議用於非推理模型">
+            <input type="checkbox" id="prompt-repetition">
+            <span class="prompt-repetition-text">Repetition</span>
+          </label>
+        </div>
+        <textarea id="message-input" placeholder="輸入訊息...&#10;&#10;提示：先選擇動作，再輸入額外說明" rows="6"></textarea>
+        <button id="send-btn">傳送</button>
+      </section>
+    </div><!-- end normal-mode -->
+
+    <!-- Discussion Mode Content -->
+    <div id="discussion-mode" class="hidden">
+      <section class="discussion-setup" id="discussion-setup">
+        <div class="participant-options">
+          <label class="participant-option">
+            <input type="checkbox" name="participant" value="claude">
+            <span class="target-name claude">Claude</span>
+            <span class="connection-indicator" id="participant-indicator-claude"></span>
+          </label>
+          <label class="participant-option">
+            <input type="checkbox" name="participant" value="chatgpt" checked>
+            <span class="target-name chatgpt">ChatGPT</span>
+            <span class="connection-indicator" id="participant-indicator-chatgpt"></span>
+          </label>
+          <label class="participant-option">
+            <input type="checkbox" name="participant" value="gemini" checked>
+            <span class="target-name gemini">Gemini</span>
+            <span class="connection-indicator" id="participant-indicator-gemini"></span>
+          </label>
+        </div>
+        <section class="discussion-input-section">
+          <div class="participant-hint-row">
+            <p class="hint">請選擇 2 位參與者</p>
+            <label class="prompt-repetition-label" title="建議用於非推理模型">
+              <input type="checkbox" id="prompt-repetition-discussion">
+              <span class="prompt-repetition-text">Repetition</span>
+            </label>
+          </div>
+          <textarea id="discussion-topic" placeholder="輸入討論主題...&#10;&#10;範例：微服務架構和單體架構各有什麼優缺點？" rows="6"></textarea>
+          <button id="start-discussion-btn">開始討論</button>
+        </section>
+      </section>
+
+      <section class="discussion-active hidden" id="discussion-active">
+        <div class="discussion-header">
+          <div class="discussion-info">
+            <span class="round-badge" id="round-badge">第 1 輪</span>
+            <span class="participants-badge" id="participants-badge">Claude vs ChatGPT</span>
+          </div>
+          <button class="end-btn" id="end-discussion-btn">結束</button>
+        </div>
+        <details class="discussion-topic-container" id="topic-container" open>
+          <summary class="topic-toggle">主題 <span class="toggle-hint">（點擊展開/收合）</span></summary>
+          <div class="discussion-topic-display" id="topic-display"></div>
+        </details>
+        <div class="discussion-status" id="discussion-status">
+          等待初始回覆...
+        </div>
+        <div class="discussion-interject">
+          <label>插話（同步傳送給討論雙方）</label>
+          <textarea id="interject-input" placeholder="輸入你想對雙方說的話..."></textarea>
+          <div class="interject-actions">
+            <button id="interject-btn">傳送給雙方</button>
+          </div>
+        </div>
+        <div class="discussion-controls">
+          <button id="next-round-btn" disabled>下一輪</button>
+          <button id="generate-summary-btn" disabled>產生摘要</button>
+        </div>
+      </section>
+
+      <section class="discussion-summary hidden" id="discussion-summary">
+        <h3>討論摘要</h3>
+        <div id="summary-content"></div>
+        <button id="new-discussion-btn">新討論</button>
+      </section>
+    </div><!-- end discussion-mode -->
+
+    <section class="log">
+      <div class="log-tabs">
+        <button class="log-tab active" id="tab-activity">活動紀錄</button>
+        <button class="log-tab" id="tab-system">系統日誌</button>
+        <button class="log-copy-btn" id="log-copy-btn">Copy</button>
+        <button class="log-clear-btn" id="log-clear-btn">Clear</button>
+      </div>
+      <div id="log-container" class="log-content"></div>
+      <div id="syslog-container" class="log-content hidden"></div>
+    </section>
+
+    <footer class="copyright">
+      Current Version by Wei Topaz
+      <br>(Orig. by © AXTONLIU™ & AI精英學院™)
+    </footer>
+  </div>
+
+  <!-- Source Selection Modal -->
+  <div id="source-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="modal-title">選擇評價來源</h3>
+      <p id="modal-subtitle">請選擇要被評價的 AI：</p>
+      <div class="modal-options" id="modal-options">
+        <label class="modal-option">
+          <input type="checkbox" name="source" value="claude">
+          <span class="target-name claude">Claude</span>
+        </label>
+        <label class="modal-option">
+          <input type="checkbox" name="source" value="chatgpt">
+          <span class="target-name chatgpt">ChatGPT</span>
+        </label>
+        <label class="modal-option">
+          <input type="checkbox" name="source" value="gemini">
+          <span class="target-name gemini">Gemini</span>
+        </label>
+      </div>
+      <div class="modal-tone">
+        <label for="modal-tone-select">評價語氣：</label>
+        <select id="modal-tone-select">
+          <option value="general">綜合評價</option>
+          <option value="pros">指出優點</option>
+          <option value="cons">指出問題</option>
+          <option value="add">補充說明</option>
+          <option value="compare">觀點對比</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="modal-btn secondary">取消</button>
+        <button id="modal-confirm" class="modal-btn primary">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+
+</html>
