@@ -1,3 +1,8 @@
+/**
+ * AI Roundtable - Gemini Content Script
+ * Original Author: Axton Liu (MIT License)
+ * Modifications by: Wei Topaz (2026)
+ */
 // AI Panel - Gemini Content Script
 
 (function () {

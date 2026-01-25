@@ -1,3 +1,8 @@
+/**
+ * AI Roundtable - Claude Content Script
+ * Original Author: Axton Liu (MIT License)
+ * Modifications by: Wei Topaz (2026)
+ */
 // AI Panel - Claude Content Script
 
 (function () {

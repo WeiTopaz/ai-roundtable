@@ -1,3 +1,12 @@
+/**
+ * AI Roundtable - Side Panel Controller
+ * 
+ * Original Author: Axton Liu (MIT License)
+ * Modifications by: Wei Topaz (2026)
+ * 
+ * See MODIFICATIONS.md for detailed change log.
+ */
+
 // AI Panel - Side Panel Controller
 
 const AI_TYPES = ['claude', 'chatgpt', 'gemini'];

@@ -1,3 +1,8 @@
+/**
+ * AI Roundtable - Background Service Worker
+ * Original Author: Axton Liu (MIT License)
+ * Modifications by: Wei Topaz (2026)
+ */
 // AI Panel - Background Service Worker
 
 // URL patterns for each AI

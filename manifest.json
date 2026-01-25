@@ -3,6 +3,7 @@
   "name": "AI 圓桌 - Multi-AI Roundtable",
   "version": "0.1.5",
   "description": "讓多個 AI 助手圍桌討論，交叉評價，深度協作",
+  "author": "Wei Topaz (based on work by Axton Liu)",
   "permissions": [
     "sidePanel",
     "activeTab",

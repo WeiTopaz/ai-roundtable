@@ -1,3 +1,8 @@
+/**
+ * AI Roundtable - ChatGPT Content Script
+ * Original Author: Axton Liu (MIT License)
+ * Modifications by: Wei Topaz (2026)
+ */
 // AI Panel - ChatGPT Content Script
 
 (function () {
