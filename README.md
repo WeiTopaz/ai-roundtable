@@ -1,11 +1,10 @@
 # AI 圓桌 (AI Roundtable)
 
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
+
 > 讓多個 AI 助手圍桌討論，交叉評價，深度協作
 
 一個 Chrome 擴充功能，讓你像「會議主持人」一樣，同時操控多個 AI（Claude、ChatGPT、Gemini），實現真正的 AI 圓桌會議。
-
-<!-- TODO: 添加 GIF 演示 -->
-<!-- ![Demo GIF](assets/demo.gif) -->
 
 ---
 
