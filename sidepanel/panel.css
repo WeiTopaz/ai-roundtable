@@ -64,7 +64,7 @@ body {
 }
 
 .container {
-  padding: 16px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -95,10 +95,11 @@ header .subtitle {
 .targets {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   flex-shrink: 0;
   background: var(--bg-card);
-  padding: 12px;
+  padding: 8px;
   border-radius: 12px;
   border: 1px solid var(--border-main);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -114,6 +115,9 @@ header .subtitle {
   border: 1px solid var(--border-main);
   cursor: pointer;
   transition: all 0.2s;
+  flex: 1 1 auto;
+  min-width: 80px;
+  justify-content: center;
 }
 
 .target-label:hover {
@@ -719,10 +723,11 @@ header .subtitle {
 .participant-options {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   flex-shrink: 0;
   background: var(--bg-card);
-  padding: 12px;
+  padding: 8px;
   border-radius: 12px;
   border: 1px solid var(--border-main);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -738,6 +743,9 @@ header .subtitle {
   border: 1px solid var(--border-main);
   cursor: pointer;
   transition: all 0.2s;
+  flex: 1 1 auto;
+  min-width: 80px;
+  justify-content: center;
 }
 
 .participant-option:hover {
