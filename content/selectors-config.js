@@ -47,7 +47,7 @@ const AI_SELECTORS = {
             thinkingFilter: {
                 container: '[class*="overflow-hidden"][class*="max-h-"]',
                 parent: '.font-claude-response',
-                buttonText: ['Thought process', '思考过程']
+                buttonText: ['Thought process', '思考過程']
             }
         },
 

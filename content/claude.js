@@ -254,7 +254,7 @@
         const buttons = parent.querySelectorAll('button');
         for (const btn of buttons) {
           if (btn.textContent.includes('Thought process') ||
-            btn.textContent.includes('思考过程')) {
+            btn.textContent.includes('思考過程')) {
             // Check if block is descendant of this button's container
             const btnContainer = btn.closest('[class*="border-border-300"]');
             if (btnContainer && btnContainer.contains(block)) {
