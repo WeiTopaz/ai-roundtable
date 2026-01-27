@@ -10,6 +10,14 @@
 
   const AI_TYPE = 'claude';
 
+  // Capture timing configurations (in milliseconds)
+  const CAPTURE_CONFIG = {
+    MAX_WAIT: 120000,         // 2 minutes - maximum wait for response
+    CHECK_INTERVAL: 500,      // 500ms - interval between stability checks
+    STABLE_THRESHOLD: 4,      // 4 checks (2 seconds) of stable content
+    REACT_DELAY: 100          // 100ms - delay for React state update
+  };
+
   // Check if extension context is still valid
   function isContextValid() {
     return chrome.runtime && chrome.runtime.id;
@@ -80,7 +88,7 @@
     inputEl.dispatchEvent(new Event('input', { bubbles: true }));
 
     // Small delay to let React process
-    await sleep(100);
+    await sleep(CAPTURE_CONFIG.REACT_DELAY);
 
     // Find and click the send button
     const sendButton = findSendButton();
@@ -195,20 +203,17 @@
 
     let previousContent = '';
     let stableCount = 0;
-    const maxWait = 120000;  // 2 minutes - sufficient for most responses
-    const checkInterval = 500;
-    const stableThreshold = 4;  // 2 seconds of stable content
 
     const startTime = Date.now();
 
     try {
-      while (Date.now() - startTime < maxWait) {
+      while (Date.now() - startTime < CAPTURE_CONFIG.MAX_WAIT) {
         if (!isContextValid()) {
           console.log('[AI Panel] Context invalidated, stopping capture');
           return;
         }
 
-        await sleep(checkInterval);
+        await sleep(CAPTURE_CONFIG.CHECK_INTERVAL);
 
         const isStreaming = document.querySelector('[data-is-streaming="true"]') ||
           document.querySelector('button[aria-label*="Stop"]');
@@ -217,7 +222,7 @@
 
         if (!isStreaming && currentContent === previousContent && currentContent.length > 0) {
           stableCount++;
-          if (stableCount >= stableThreshold) {
+          if (stableCount >= CAPTURE_CONFIG.STABLE_THRESHOLD) {
             if (currentContent !== lastCapturedContent) {
               lastCapturedContent = currentContent;
               safeSendMessage({

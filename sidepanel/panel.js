@@ -11,6 +11,21 @@
 
 const AI_TYPES = ['claude', 'chatgpt', 'gemini'];
 
+// Timeout configurations (in milliseconds)
+const TIMEOUTS = {
+  GET_RESPONSE: 10000,    // 10 seconds for getting AI response
+  SEND_MESSAGE: 15000,    // 15 seconds for sending message
+  SUMMARY_WAIT: 300000,   // 5 minutes for summary generation
+  SUMMARY_CHECK_INTERVAL: 500,  // 500ms interval for checking summary completion
+  FEEDBACK_DURATION: 1000 // 1 second for button feedback (Copy/Clear)
+};
+
+// Limits configurations
+const LIMITS = {
+  LOG_MAX_ENTRIES: 50,      // Maximum activity log entries
+  SYSLOG_MAX_ENTRIES: 500   // Maximum system log entries
+};
+
 // Cross-reference action keywords (inserted into message)
 // New structure: simplified Chinese-first naming
 const CROSS_REF_ACTIONS = {
@@ -633,14 +648,40 @@ ${source.content}
   log(`[單向評價] 完成！已傳送 ${sources.length} 個回覆給 ${capitalize(evaluator)}`, 'success');
 }
 
-async function getLatestResponse(aiType) {
+/**
+ * Get the latest response from an AI
+ * @param {string} aiType - The AI type ('claude', 'chatgpt', 'gemini')
+ * @param {number} timeoutMs - Optional timeout in milliseconds (default: TIMEOUTS.GET_RESPONSE)
+ * @returns {Promise<string|null>} The AI response content or null
+ */
+async function getLatestResponse(aiType, timeoutMs = TIMEOUTS.GET_RESPONSE) {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage(
-      { type: 'GET_RESPONSE', aiType },
-      (response) => {
-        resolve(response?.content || null);
-      }
-    );
+    const timeoutId = setTimeout(() => {
+      syslog('warn', 'response', `取得回覆超時: ${aiType}`, { timeout: timeoutMs });
+      resolve(null);  // Resolve with null on timeout to allow graceful degradation
+    }, timeoutMs);
+
+    try {
+      chrome.runtime.sendMessage(
+        { type: 'GET_RESPONSE', aiType },
+        (response) => {
+          clearTimeout(timeoutId);
+
+          // Check for Chrome runtime errors
+          if (chrome.runtime.lastError) {
+            syslog('error', 'response', `Runtime error: ${chrome.runtime.lastError.message}`, { aiType });
+            resolve(null);
+            return;
+          }
+
+          resolve(response?.content || null);
+        }
+      );
+    } catch (err) {
+      clearTimeout(timeoutId);
+      syslog('error', 'response', `取得回覆異常: ${aiType}`, { error: err.message });
+      resolve(null);
+    }
   });
 }
 
@@ -660,7 +701,14 @@ function isPromptRepetitionEnabled() {
   return normalModeCheckbox?.checked || false;
 }
 
-async function sendToAI(aiType, message) {
+/**
+ * Send a message to an AI
+ * @param {string} aiType - The AI type ('claude', 'chatgpt', 'gemini')
+ * @param {string} message - The message to send
+ * @param {number} timeoutMs - Optional timeout in milliseconds (default: TIMEOUTS.SEND_MESSAGE)
+ * @returns {Promise<{success: boolean, error?: string}>} Result object
+ */
+async function sendToAI(aiType, message, timeoutMs = TIMEOUTS.SEND_MESSAGE) {
   // Apply prompt repetition if enabled
   let finalMessage = message;
   if (isPromptRepetitionEnabled()) {
@@ -671,19 +719,43 @@ async function sendToAI(aiType, message) {
   syslog('debug', 'send', `準備傳送訊息至 ${aiType}`, { messageLength: finalMessage.length });
 
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage(
-      { type: 'SEND_MESSAGE', aiType, message: finalMessage },
-      (response) => {
-        if (response?.success) {
-          log(`已傳送至 ${aiType}`, 'success');
-          syslog('info', 'send', `訊息已傳送至 ${aiType}`, { messageLength: finalMessage.length });
-        } else {
-          log(`傳送至 ${aiType} 失敗: ${response?.error || '未知錯誤'}`, 'error');
-          syslog('error', 'send', `傳送失敗: ${aiType}`, { error: response?.error });
+    const timeoutId = setTimeout(() => {
+      log(`傳送至 ${aiType} 超時`, 'error');
+      syslog('warn', 'send', `傳送訊息超時: ${aiType}`, { timeout: timeoutMs });
+      resolve({ success: false, error: '請求超時' });
+    }, timeoutMs);
+
+    try {
+      chrome.runtime.sendMessage(
+        { type: 'SEND_MESSAGE', aiType, message: finalMessage },
+        (response) => {
+          clearTimeout(timeoutId);
+
+          // Check for Chrome runtime errors
+          if (chrome.runtime.lastError) {
+            const errorMsg = chrome.runtime.lastError.message;
+            log(`傳送至 ${aiType} 失敗: ${errorMsg}`, 'error');
+            syslog('error', 'send', `Runtime error: ${errorMsg}`, { aiType });
+            resolve({ success: false, error: errorMsg });
+            return;
+          }
+
+          if (response?.success) {
+            log(`已傳送至 ${aiType}`, 'success');
+            syslog('info', 'send', `訊息已傳送至 ${aiType}`, { messageLength: finalMessage.length });
+          } else {
+            log(`傳送至 ${aiType} 失敗: ${response?.error || '未知錯誤'}`, 'error');
+            syslog('error', 'send', `傳送失敗: ${aiType}`, { error: response?.error });
+          }
+          resolve(response || { success: false, error: '無回應' });
         }
-        resolve(response);
-      }
-    );
+      );
+    } catch (err) {
+      clearTimeout(timeoutId);
+      log(`傳送至 ${aiType} 異常: ${err.message}`, 'error');
+      syslog('error', 'send', `傳送異常: ${aiType}`, { error: err.message });
+      resolve({ success: false, error: err.message });
+    }
   });
 }
 
@@ -704,8 +776,8 @@ function log(message, type = 'info') {
   entry.innerHTML = `<span class="time">${fullTime}</span>${message}`;
   logContainer.insertBefore(entry, logContainer.firstChild);
 
-  // Keep only last 50 entries
-  while (logContainer.children.length > 50) {
+  // Keep only last LOG_MAX_ENTRIES entries
+  while (logContainer.children.length > LIMITS.LOG_MAX_ENTRIES) {
     logContainer.removeChild(logContainer.lastChild);
   }
 }
@@ -794,8 +866,8 @@ function syslog(level, source, message, context = null) {
   entry.innerHTML = html;
   syslogContainer.insertBefore(entry, syslogContainer.firstChild);
 
-  // Keep only last 500 entries (more than activity log for debugging)
-  while (syslogContainer.children.length > 500) {
+  // Keep only last SYSLOG_MAX_ENTRIES entries (more than activity log for debugging)
+  while (syslogContainer.children.length > LIMITS.SYSLOG_MAX_ENTRIES) {
     syslogContainer.removeChild(syslogContainer.lastChild);
   }
 }
@@ -826,7 +898,7 @@ async function copyLogContent() {
     setTimeout(() => {
       btn.textContent = originalText;
       btn.classList.remove('copied');
-    }, 1000);
+    }, TIMEOUTS.FEEDBACK_DURATION);
 
     syslog('info', 'clipboard', `已複製 ${entries.length} 筆 ${currentLogTab === 'activity' ? '活動紀錄' : '系統日誌'}`);
   } catch (err) {
@@ -856,7 +928,7 @@ function clearLogContent() {
   setTimeout(() => {
     btn.textContent = originalText;
     btn.classList.remove('cleared');
-  }, 1000);
+  }, TIMEOUTS.FEEDBACK_DURATION);
 
   // Log the clear action (only to system log if we cleared activity log)
   if (currentLogTab === 'activity') {
@@ -1161,7 +1233,7 @@ ${historyText}`;
       log(`[摘要] 雙方摘要已產生`, 'success');
       showSummary(ai1Summary, ai2Summary);
     }
-  }, 500);
+  }, TIMEOUTS.SUMMARY_CHECK_INTERVAL);
 
   // 超時保護：5 分鐘後強制停止
   summaryTimeout = setTimeout(() => {
@@ -1169,7 +1241,7 @@ ${historyText}`;
     log('[摘要] 超時：未在時限內收到回覆', 'error');
     updateDiscussionStatus('error', '摘要請求超時');
     document.getElementById('generate-summary-btn').disabled = false;
-  }, 300000);
+  }, TIMEOUTS.SUMMARY_WAIT);
 }
 
 function showSummary(ai1Summary, ai2Summary) {

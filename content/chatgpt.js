@@ -10,6 +10,17 @@
 
   const AI_TYPE = 'chatgpt';
 
+  // Capture timing configurations (in milliseconds)
+  const CAPTURE_CONFIG = {
+    MAX_WAIT: 120000,              // 2 minutes - maximum wait for response
+    CHECK_INTERVAL: 500,           // 500ms - interval between stability checks
+    STABLE_THRESHOLD: 6,           // 6 checks (3 seconds) of stable content (increased for reliability)
+    STREAMING_CHECK_THRESHOLD: 3,  // 3 checks (1.5 seconds) - must see no streaming
+    REACT_DELAY: 100,              // 100ms - delay for React state update
+    BUTTON_WAIT: 2000,             // 2 seconds - max wait for button enabled
+    BUTTON_CHECK_INTERVAL: 50      // 50ms - interval for button check
+  };
+
   // Check if extension context is still valid
   function isContextValid() {
     return chrome.runtime && chrome.runtime.id;
@@ -84,7 +95,7 @@
     }
 
     // Small delay to let React process
-    await sleep(100);
+    await sleep(CAPTURE_CONFIG.REACT_DELAY);
 
     // Find and click the send button
     const sendButton = findSendButton();
@@ -135,10 +146,10 @@
     return null;
   }
 
-  async function waitForButtonEnabled(button, maxWait = 2000) {
+  async function waitForButtonEnabled(button, maxWait = CAPTURE_CONFIG.BUTTON_WAIT) {
     const start = Date.now();
     while (button.disabled && Date.now() - start < maxWait) {
-      await sleep(50);
+      await sleep(CAPTURE_CONFIG.BUTTON_CHECK_INTERVAL);
     }
   }
 
@@ -240,23 +251,19 @@
 
     let previousContent = '';
     let stableCount = 0;
-    const maxWait = 120000;  // 2 minutes - sufficient for most responses
-    const checkInterval = 500;
-    const stableThreshold = 6;  // 3 seconds of stable content (increased for reliability)
-    const streamingCheckThreshold = 3;  // Must see no streaming for 1.5 seconds
 
     const startTime = Date.now();
     let firstContentTime = null;  // Track when we first see content
     let noStreamingCount = 0;  // Track consecutive non-streaming checks
 
     try {
-      while (Date.now() - startTime < maxWait) {
+      while (Date.now() - startTime < CAPTURE_CONFIG.MAX_WAIT) {
         if (!isContextValid()) {
           console.log('[AI Panel] Context invalidated, stopping capture');
           return;
         }
 
-        await sleep(checkInterval);
+        await sleep(CAPTURE_CONFIG.CHECK_INTERVAL);
 
         const currentContent = getLatestResponse() || '';
         const currentlyStreaming = isStreaming();
@@ -277,7 +284,7 @@
 
         // Debug: log every 10 seconds
         const elapsed = Date.now() - startTime;
-        if (elapsed % 10000 < checkInterval) {
+        if (elapsed % 10000 < CAPTURE_CONFIG.CHECK_INTERVAL) {
           console.log(`[AI Panel] ChatGPT check: contentLen=${currentContent.length}, stableCount=${stableCount}, streaming=${currentlyStreaming}, noStreamingCount=${noStreamingCount}, elapsed=${Math.round(elapsed / 1000)}s`);
         }
 
@@ -287,12 +294,12 @@
         // 3. Not currently streaming (based on UI indicators)
         const contentStable = currentContent === previousContent &&
           currentContent.length > 0 &&
-          noStreamingCount >= streamingCheckThreshold;
+          noStreamingCount >= CAPTURE_CONFIG.STREAMING_CHECK_THRESHOLD;
 
         if (contentStable) {
           stableCount++;
           // Capture after stable checks pass AND streaming has stopped
-          if (stableCount >= stableThreshold) {
+          if (stableCount >= CAPTURE_CONFIG.STABLE_THRESHOLD) {
             if (currentContent !== lastCapturedContent) {
               lastCapturedContent = currentContent;
               console.log('[AI Panel] ChatGPT capturing response, length:', currentContent.length);

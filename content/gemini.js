@@ -10,6 +10,16 @@
 
   const AI_TYPE = 'gemini';
 
+  // Capture timing configurations (in milliseconds)
+  const CAPTURE_CONFIG = {
+    MAX_WAIT: 120000,         // 2 minutes - maximum wait for response
+    CHECK_INTERVAL: 500,      // 500ms - interval between stability checks
+    STABLE_THRESHOLD: 4,      // 4 checks (2 seconds) of stable content
+    UI_DELAY: 150,            // 150ms - delay for UI state update
+    BUTTON_WAIT: 2000,        // 2 seconds - max wait for button enabled
+    BUTTON_CHECK_INTERVAL: 50 // 50ms - interval for button check
+  };
+
   // Check if extension context is still valid
   function isContextValid() {
     return chrome.runtime && chrome.runtime.id;
@@ -87,7 +97,7 @@
     }
 
     // Small delay to let the UI process
-    await sleep(150);
+    await sleep(CAPTURE_CONFIG.UI_DELAY);
 
     // Find and click the send button
     const sendButton = findSendButton();
@@ -152,10 +162,10 @@
     return null;
   }
 
-  async function waitForButtonEnabled(button, maxWait = 2000) {
+  async function waitForButtonEnabled(button, maxWait = CAPTURE_CONFIG.BUTTON_WAIT) {
     const start = Date.now();
     while (button.disabled && Date.now() - start < maxWait) {
-      await sleep(50);
+      await sleep(CAPTURE_CONFIG.BUTTON_CHECK_INTERVAL);
     }
   }
 
@@ -221,26 +231,23 @@
 
     let previousContent = '';
     let stableCount = 0;
-    const maxWait = 120000;  // 2 minutes - sufficient for most responses
-    const checkInterval = 500;
-    const stableThreshold = 4;  // 2 seconds of stable content
 
     const startTime = Date.now();
 
     try {
-      while (Date.now() - startTime < maxWait) {
+      while (Date.now() - startTime < CAPTURE_CONFIG.MAX_WAIT) {
         if (!isContextValid()) {
           console.log('[AI Panel] Context invalidated, stopping capture');
           return;
         }
 
-        await sleep(checkInterval);
+        await sleep(CAPTURE_CONFIG.CHECK_INTERVAL);
 
         const currentContent = getLatestResponse() || '';
 
         if (currentContent === previousContent && currentContent.length > 0) {
           stableCount++;
-          if (stableCount >= stableThreshold) {
+          if (stableCount >= CAPTURE_CONFIG.STABLE_THRESHOLD) {
             if (currentContent !== lastCapturedContent) {
               lastCapturedContent = currentContent;
               safeSendMessage({

@@ -900,7 +900,6 @@ header .subtitle {
   background: var(--bg-card);
   border-radius: 10px;
   margin-bottom: 8px;
-  border-left: 3px solid var(--accent-green);
   border: 1px solid var(--border-main);
   border-left: 3px solid var(--accent-green);
   flex-shrink: 0;
