@@ -29,6 +29,7 @@
         "https://claude.ai/*"
       ],
       "js": [
+        "content/selectors-config.js",
         "content/claude.js"
       ],
       "run_at": "document_idle"
@@ -39,6 +40,7 @@
         "https://chatgpt.com/*"
       ],
       "js": [
+        "content/selectors-config.js",
         "content/chatgpt.js"
       ],
       "run_at": "document_idle"
@@ -48,6 +50,7 @@
         "https://gemini.google.com/*"
       ],
       "js": [
+        "content/selectors-config.js",
         "content/gemini.js"
       ],
       "run_at": "document_idle"

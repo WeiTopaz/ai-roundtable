@@ -59,13 +59,8 @@
   // setupResponseObserver();
 
   async function injectMessage(text) {
-    // Claude uses a contenteditable div with ProseMirror
-    const inputSelectors = [
-      'div[contenteditable="true"].ProseMirror',
-      'div.ProseMirror[contenteditable="true"]',
-      '[data-placeholder="How can Claude help you today?"]',
-      'fieldset div[contenteditable="true"]'
-    ];
+    // Use centralized selectors from AI_SELECTORS
+    const inputSelectors = AI_SELECTORS.claude.input;
 
     let inputEl = null;
     for (const selector of inputSelectors) {
@@ -104,16 +99,9 @@
 
     return true;
   }
-
   function findSendButton() {
-    // Claude's send button is typically an SVG arrow or button with specific attributes
-    const selectors = [
-      'button[aria-label="Send message"]',
-      'button[aria-label="Send Message"]',
-      'button[type="submit"]',
-      'fieldset button:last-of-type',
-      'button svg[viewBox]' // Button containing an SVG
-    ];
+    // Use centralized selectors from AI_SELECTORS
+    const selectors = AI_SELECTORS.claude.sendButton;
 
     for (const selector of selectors) {
       const el = document.querySelector(selector);
@@ -159,7 +147,7 @@
     // Start observing once the main content area is available
     const startObserving = () => {
       if (!isContextValid()) return;
-      const mainContent = document.querySelector('main') || document.body;
+      const mainContent = document.querySelector(AI_SELECTORS.claude.mainContent) || document.body;
       observer.observe(mainContent, {
         childList: true,
         subtree: true
@@ -179,11 +167,7 @@
   function checkForResponse(node) {
     if (isCapturing) return;
 
-    const responseSelectors = [
-      '[data-is-streaming]',
-      '.font-claude-message',
-      '[class*="response"]'
-    ];
+    const responseSelectors = AI_SELECTORS.claude.response.detection;
 
     for (const selector of responseSelectors) {
       if (node.matches?.(selector) || node.querySelector?.(selector)) {
@@ -215,8 +199,8 @@
 
         await sleep(CAPTURE_CONFIG.CHECK_INTERVAL);
 
-        const isStreaming = document.querySelector('[data-is-streaming="true"]') ||
-          document.querySelector('button[aria-label*="Stop"]');
+        const isStreaming = document.querySelector(AI_SELECTORS.claude.streaming.active) ||
+          document.querySelector(AI_SELECTORS.claude.streaming.stopButton);
 
         const currentContent = getLatestResponse() || '';
 

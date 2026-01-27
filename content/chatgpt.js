@@ -60,16 +60,9 @@
 
   // Response observer disabled - content is now read on-demand when buttons are pressed
   // setupResponseObserver();
-
   async function injectMessage(text) {
-    // ChatGPT uses a textarea or contenteditable div
-    const inputSelectors = [
-      '#prompt-textarea',
-      'textarea[data-id="root"]',
-      'div[contenteditable="true"][data-placeholder]',
-      'textarea[placeholder*="Message"]',
-      'textarea'
-    ];
+    // Use centralized selectors from AI_SELECTORS
+    const inputSelectors = AI_SELECTORS.chatgpt.input;
 
     let inputEl = null;
     for (const selector of inputSelectors) {
@@ -116,14 +109,8 @@
   }
 
   function findSendButton() {
-    // ChatGPT's send button
-    const selectors = [
-      'button[data-testid="send-button"]',
-      'button[aria-label="Send prompt"]',
-      'button[aria-label="Send message"]',
-      'form button[type="submit"]',
-      'button svg path[d*="M15.192"]' // Arrow icon path
-    ];
+    // Use centralized selectors from AI_SELECTORS
+    const selectors = AI_SELECTORS.chatgpt.sendButton;
 
     for (const selector of selectors) {
       const el = document.querySelector(selector);
@@ -133,7 +120,7 @@
     }
 
     // Fallback: find button near the input
-    const form = document.querySelector('form');
+    const form = document.querySelector(AI_SELECTORS.chatgpt.form);
     if (form) {
       const buttons = form.querySelectorAll('button');
       for (const btn of buttons) {
@@ -173,7 +160,7 @@
 
     const startObserving = () => {
       if (!isContextValid()) return;
-      const mainContent = document.querySelector('main') || document.body;
+      const mainContent = document.querySelector(AI_SELECTORS.chatgpt.mainContent) || document.body;
       observer.observe(mainContent, {
         childList: true,
         subtree: true
@@ -193,11 +180,7 @@
   function checkForResponse(node) {
     if (isCapturing) return;
 
-    const responseSelectors = [
-      '[data-message-author-role="assistant"]',
-      '.agent-turn',
-      '[class*="assistant"]'
-    ];
+    const responseSelectors = AI_SELECTORS.chatgpt.response.detection;
 
     for (const selector of responseSelectors) {
       if (node.matches?.(selector) || node.querySelector?.(selector)) {
@@ -211,27 +194,25 @@
   // Check if ChatGPT is still streaming a response
   function isStreaming() {
     // Method 1: Check for stop button (most reliable)
-    const stopButton = document.querySelector(
-      'button[aria-label*="Stop"], button[aria-label*="停止"], button[data-testid="stop-button"]'
-    );
+    const stopButton = document.querySelector(AI_SELECTORS.chatgpt.streaming.stopButton);
     if (stopButton && isVisible(stopButton)) {
       return true;
     }
 
     // Method 2: Check for .result-streaming class on message
-    const streamingElement = document.querySelector('.result-streaming');
+    const streamingElement = document.querySelector(AI_SELECTORS.chatgpt.streaming.streamingClass);
     if (streamingElement) {
       return true;
     }
 
     // Method 3: Check for writing/thinking indicators
-    const writingBlock = document.querySelector('[data-writing-block]');
+    const writingBlock = document.querySelector(AI_SELECTORS.chatgpt.streaming.writingBlock);
     if (writingBlock) {
       return true;
     }
 
     // Method 4: Check for the pulsing cursor (typing indicator)
-    const cursor = document.querySelector('[class*="result-streaming"] span:last-child');
+    const cursor = document.querySelector(AI_SELECTORS.chatgpt.streaming.cursor);
     if (cursor) {
       return true;
     }
@@ -326,20 +307,9 @@
       console.log('[AI Panel] ChatGPT capture loop ended');
     }
   }
-
   function getLatestResponse() {
-    // Find all assistant messages and get the last one
-    // ChatGPT UI changes frequently, so we try multiple selectors
-    const messageSelectors = [
-      '[data-message-author-role="assistant"] .markdown',
-      '[data-message-author-role="assistant"] [class*="markdown"]',
-      '[data-message-author-role="assistant"]',
-      '.agent-turn .markdown',
-      '[class*="agent-turn"] .markdown',
-      '[data-testid*="conversation-turn"]:has([data-message-author-role="assistant"]) .markdown',
-      '[data-testid*="conversation-turn"] .markdown',
-      'article[data-testid*="conversation"] .markdown'
-    ];
+    // Use centralized selectors from AI_SELECTORS
+    const messageSelectors = AI_SELECTORS.chatgpt.response.messages;
 
     let messages = [];
     for (const selector of messageSelectors) {

@@ -61,16 +61,8 @@
   // setupResponseObserver();
 
   async function injectMessage(text) {
-    // Gemini uses a rich text editor (contenteditable or textarea)
-    const inputSelectors = [
-      '.ql-editor',
-      'div[contenteditable="true"]',
-      'rich-textarea textarea',
-      'textarea[aria-label*="prompt"]',
-      'textarea[placeholder*="Enter"]',
-      '.input-area textarea',
-      'textarea'
-    ];
+    // Use centralized selectors from AI_SELECTORS
+    const inputSelectors = AI_SELECTORS.gemini.input;
 
     let inputEl = null;
     for (const selector of inputSelectors) {
@@ -118,15 +110,8 @@
   }
 
   function findSendButton() {
-    // Gemini's send button
-    const selectors = [
-      'button[aria-label*="Send"]',
-      'button[aria-label*="submit"]',
-      'button.send-button',
-      'button[data-test-id="send-button"]',
-      '.input-area button',
-      'button mat-icon[data-mat-icon-name="send"]'
-    ];
+    // Use centralized selectors from AI_SELECTORS
+    const selectors = AI_SELECTORS.gemini.sendButton;
 
     for (const selector of selectors) {
       const el = document.querySelector(selector);
@@ -189,7 +174,7 @@
 
     const startObserving = () => {
       if (!isContextValid()) return;
-      const mainContent = document.querySelector('main, .conversation-container') || document.body;
+      const mainContent = document.querySelector(AI_SELECTORS.gemini.mainContent) || document.body;
       observer.observe(mainContent, {
         childList: true,
         subtree: true
@@ -210,9 +195,8 @@
     // Skip if already capturing
     if (isCapturing) return;
 
-    // Check if this node or its children contain a model response
-    const isResponse = node.matches?.('.model-response-text, message-content') ||
-      node.querySelector?.('.model-response-text, message-content') ||
+    const isResponse = node.matches?.(AI_SELECTORS.gemini.response.detection) ||
+      node.querySelector?.(AI_SELECTORS.gemini.response.detection) ||
       node.classList?.contains('model-response-text');
 
     if (isResponse) {
@@ -271,8 +255,8 @@
   }
 
   function getLatestResponse() {
-    // Gemini uses .model-response-text for AI responses
-    const messages = document.querySelectorAll('.model-response-text');
+    // Use centralized selectors from AI_SELECTORS
+    const messages = document.querySelectorAll(AI_SELECTORS.gemini.response.content);
 
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
@@ -283,7 +267,7 @@
     }
 
     // Fallback to message-content
-    const fallback = document.querySelectorAll('message-content');
+    const fallback = document.querySelectorAll(AI_SELECTORS.gemini.response.fallback);
     if (fallback.length > 0) {
       const lastMessage = fallback[fallback.length - 1];
       const content = lastMessage.innerText.trim();
