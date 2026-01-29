@@ -23,5 +23,6 @@ node_modules/
 # antigravity
 .antigravity/
 
-# Skills
+# AI
 .agent/
+.gemini/

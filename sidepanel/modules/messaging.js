@@ -4,7 +4,7 @@
  * Handles message parsing, sending, and cross-reference logic.
  */
 
-import { TIMEOUTS } from './config.js';
+import { TIMEOUTS, COMMANDS } from './config.js';
 import { log, syslog } from './logging.js';
 
 /**
@@ -33,9 +33,10 @@ export function parseMessage(message) {
     // Check for /mutual command: /mutual [optional prompt]
     // Triggers mutual review based on current responses (no new topic needed)
     const trimmedMessage = message.trim();
-    if (trimmedMessage.toLowerCase() === '/mutual' || trimmedMessage.toLowerCase().startsWith('/mutual ')) {
-        // Extract everything after "/mutual " as the prompt
-        const prompt = trimmedMessage.length > 7 ? trimmedMessage.substring(7).trim() : '';
+    const mutualCmd = COMMANDS.MUTUAL.toLowerCase();
+    if (trimmedMessage.toLowerCase() === mutualCmd || trimmedMessage.toLowerCase().startsWith(mutualCmd + ' ')) {
+        // Extract everything after the command as the prompt
+        const prompt = trimmedMessage.length > mutualCmd.length ? trimmedMessage.substring(mutualCmd.length).trim() : '';
         return {
             mutual: true,
             prompt: prompt || '請評價以上觀點。你同意什麼？不同意什麼？有什麼補充？',
@@ -47,14 +48,15 @@ export function parseMessage(message) {
 
     // Check for /cross command first: /cross @targets <- @sources message
     // Use this for complex cases (3 AIs, or when you want to be explicit)
-    if (message.trim().toLowerCase().startsWith('/cross ')) {
+    const crossCmd = COMMANDS.CROSS.toLowerCase();
+    if (message.trim().toLowerCase().startsWith(crossCmd + ' ')) {
         const arrowIndex = message.indexOf('<-');
         if (arrowIndex === -1) {
             // No arrow found, treat as regular message
             return { crossRef: false, mentions: [], originalMessage: message };
         }
 
-        const beforeArrow = message.substring(7, arrowIndex).trim(); // Skip "/cross "
+        const beforeArrow = message.substring(crossCmd.length + 1, arrowIndex).trim(); // Skip command prefix
         const afterArrow = message.substring(arrowIndex + 2).trim();  // Skip "<-"
 
         // Extract targets (before arrow)

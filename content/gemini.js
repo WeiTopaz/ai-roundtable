@@ -154,56 +154,9 @@
     }
   }
 
-  function setupResponseObserver() {
-    const observer = new MutationObserver((mutations) => {
-      // Check context validity in observer callback
-      if (!isContextValid()) {
-        observer.disconnect();
-        return;
-      }
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              checkForResponse(node);
-            }
-          }
-        }
-      }
-    });
-
-    const startObserving = () => {
-      if (!isContextValid()) return;
-      const mainContent = document.querySelector(AI_SELECTORS.gemini.mainContent) || document.body;
-      observer.observe(mainContent, {
-        childList: true,
-        subtree: true
-      });
-    };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', startObserving);
-    } else {
-      startObserving();
-    }
-  }
 
   let lastCapturedContent = '';
   let isCapturing = false;  // Prevent multiple captures
-
-  function checkForResponse(node) {
-    // Skip if already capturing
-    if (isCapturing) return;
-
-    const isResponse = node.matches?.(AI_SELECTORS.gemini.response.detection) ||
-      node.querySelector?.(AI_SELECTORS.gemini.response.detection) ||
-      node.classList?.contains('model-response-text');
-
-    if (isResponse) {
-      console.log('[AI Panel] Gemini detected new response, waiting for completion...');
-      waitForStreamingComplete();
-    }
-  }
 
   async function waitForStreamingComplete() {
     // Prevent multiple simultaneous captures

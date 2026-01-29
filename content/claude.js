@@ -55,8 +55,7 @@
     }
   });
 
-  // Response observer disabled - content is now read on-demand when buttons are pressed
-  // setupResponseObserver();
+  // Response observer disabled - content is now read on-demand
 
   async function injectMessage(text) {
     // Use centralized selectors from AI_SELECTORS
@@ -99,6 +98,7 @@
 
     return true;
   }
+
   function findSendButton() {
     // Use centralized selectors from AI_SELECTORS
     const selectors = AI_SELECTORS.claude.sendButton;
@@ -125,58 +125,8 @@
     return null;
   }
 
-  function setupResponseObserver() {
-    // Watch for new responses in the conversation
-    const observer = new MutationObserver((mutations) => {
-      // Check context validity in observer callback
-      if (!isContextValid()) {
-        observer.disconnect();
-        return;
-      }
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              checkForResponse(node);
-            }
-          }
-        }
-      }
-    });
-
-    // Start observing once the main content area is available
-    const startObserving = () => {
-      if (!isContextValid()) return;
-      const mainContent = document.querySelector(AI_SELECTORS.claude.mainContent) || document.body;
-      observer.observe(mainContent, {
-        childList: true,
-        subtree: true
-      });
-    };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', startObserving);
-    } else {
-      startObserving();
-    }
-  }
-
   let lastCapturedContent = '';
   let isCapturing = false;
-
-  function checkForResponse(node) {
-    if (isCapturing) return;
-
-    const responseSelectors = AI_SELECTORS.claude.response.detection;
-
-    for (const selector of responseSelectors) {
-      if (node.matches?.(selector) || node.querySelector?.(selector)) {
-        console.log('[AI Panel] Claude detected new response...');
-        waitForStreamingComplete();
-        break;
-      }
-    }
-  }
 
   async function waitForStreamingComplete() {
     if (isCapturing) {

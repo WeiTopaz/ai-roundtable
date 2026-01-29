@@ -42,3 +42,9 @@ export const TONE_PROMPTS = {
     add: '請補充以上回覆中遺漏的內容或重要考量。',
     compare: '請對比以上觀點與你的看法，分析異同。'
 };
+
+// Command prefixes for message parsing
+export const COMMANDS = {
+    MUTUAL: '/mutual',
+    CROSS: '/cross'
+};

@@ -140,56 +140,9 @@
     }
   }
 
-  function setupResponseObserver() {
-    const observer = new MutationObserver((mutations) => {
-      // Check context validity in observer callback
-      if (!isContextValid()) {
-        observer.disconnect();
-        return;
-      }
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              checkForResponse(node);
-            }
-          }
-        }
-      }
-    });
-
-    const startObserving = () => {
-      if (!isContextValid()) return;
-      const mainContent = document.querySelector(AI_SELECTORS.chatgpt.mainContent) || document.body;
-      observer.observe(mainContent, {
-        childList: true,
-        subtree: true
-      });
-    };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', startObserving);
-    } else {
-      startObserving();
-    }
-  }
 
   let lastCapturedContent = '';
   let isCapturing = false;
-
-  function checkForResponse(node) {
-    if (isCapturing) return;
-
-    const responseSelectors = AI_SELECTORS.chatgpt.response.detection;
-
-    for (const selector of responseSelectors) {
-      if (node.matches?.(selector) || node.querySelector?.(selector)) {
-        console.log('[AI Panel] ChatGPT detected new response...');
-        waitForStreamingComplete();
-        break;
-      }
-    }
-  }
 
   // Check if ChatGPT is still streaming a response
   function isStreaming() {

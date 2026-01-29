@@ -23,7 +23,7 @@ export async function checkConnectedTabs() {
         for (const tab of tabs) {
             const aiType = getAITypeFromUrl(tab.url);
             if (aiType) {
-                connectedTabs[aiType] = tab.id;
+                connectedTabs[aiType] = true;
                 updateTabStatus(aiType, true);
             }
         }

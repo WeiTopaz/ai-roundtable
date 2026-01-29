@@ -48,29 +48,36 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function setupMessageListener() {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    syslog('debug', 'message', `收到訊息: ${message.type}`, { sender: sender?.tab?.id, data: message });
+    try {
+      syslog('debug', 'message', `收到訊息: ${message.type}`, { sender: sender?.tab?.id, data: message });
 
-    if (message.type === 'TAB_STATUS_UPDATE') {
-      updateTabStatus(message.aiType, message.connected);
-      syslog('info', 'connection', `分頁狀態更新: ${message.aiType}`, { connected: message.connected });
-    } else if (message.type === 'RESPONSE_CAPTURED') {
-      log(`${message.aiType}: 已擷取回覆`, 'success');
-      syslog('info', 'response', `回覆已擷取: ${message.aiType}`, {
-        contentLength: message.content?.length || 0,
-        preview: message.content?.substring(0, 100)
+      if (message.type === 'TAB_STATUS_UPDATE') {
+        updateTabStatus(message.aiType, message.connected);
+        syslog('info', 'connection', `分頁狀態更新: ${message.aiType}`, { connected: message.connected });
+      } else if (message.type === 'RESPONSE_CAPTURED') {
+        log(`${message.aiType}: 已擷取回覆`, 'success');
+        syslog('info', 'response', `回覆已擷取: ${message.aiType}`, {
+          contentLength: message.content?.length || 0,
+          preview: message.content?.substring(0, 100)
+        });
+        // Handle discussion mode response
+        if (discussionState.active && discussionState.pendingResponses.has(message.aiType)) {
+          handleDiscussionResponse(message.aiType, message.content);
+        }
+      } else if (message.type === 'SEND_RESULT') {
+        if (message.success) {
+          log(`${message.aiType}: 訊息已傳送`, 'success');
+          syslog('info', 'send', `訊息傳送成功: ${message.aiType}`);
+        } else {
+          log(`${message.aiType}: 失敗 - ${message.error}`, 'error');
+          syslog('error', 'send', `訊息傳送失敗: ${message.aiType}`, { error: message.error });
+        }
+      }
+    } catch (err) {
+      syslog('error', 'message', `處理訊息時發生錯誤: ${err.message}`, {
+        messageType: message?.type,
+        error: err.stack
       });
-      // Handle discussion mode response
-      if (discussionState.active && discussionState.pendingResponses.has(message.aiType)) {
-        handleDiscussionResponse(message.aiType, message.content);
-      }
-    } else if (message.type === 'SEND_RESULT') {
-      if (message.success) {
-        log(`${message.aiType}: 訊息已傳送`, 'success');
-        syslog('info', 'send', `訊息傳送成功: ${message.aiType}`);
-      } else {
-        log(`${message.aiType}: 失敗 - ${message.error}`, 'error');
-        syslog('error', 'send', `訊息傳送失敗: ${message.aiType}`, { error: message.error });
-      }
     }
   });
 }
